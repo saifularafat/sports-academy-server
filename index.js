@@ -16,6 +16,22 @@ const corsOptions = {
 app.use(cors(corsOptions))
 app.use(express.json())
 
+const verifyJWT = async (req, res, next) => {
+    const authorization = req.headers.authorization;
+    if (!authorization) {
+        return res.status(401).send({ error: true, message: 'unauthorized access' })
+    }
+
+    const token = authorization.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
+        if (error) {
+            return res.status(401).send({ error: true, message: 'unauthorized access' })
+        }
+        req.decoded = decoded;
+        next()
+    })
+}
+
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.guqonkt.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -32,26 +48,49 @@ async function run() {
 
         const usersCollection = client.db('sportsAcademyDB').collection('users')
         const instructorsCollection = client.db('sportsAcademyDB').collection('coach')
-        // const classesCollection = client.db('sportsAcademyDB').collection('classes')
-        const admissionsCollection = client.db('sportsAcademyDB').collection('admissions')
+        const classesCollection = client.db('sportsAcademyDB').collection('classes')
+        const paymentCollection = client.db('sportsAcademyDB').collection('payment')
+
+        // jwt api and token
+        app.post('/jwt', (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: '24h'
+            })
+            res.send({ token })
+        })
+
 
         // !!!! USERS api 
-        app.get('/users', async (req, res) => {
+        app.get('/users', verifyJWT, async (req, res) => {
             const result = await usersCollection.find().toArray();
             res.send(result)
         })
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             const query = { email: user.email };
             const existingUser = await usersCollection.findOne(query);
             console.log(existingUser);
             if (existingUser) {
-                return res.send({});
+                return res.send({message: 'milla geshe'});
             }
             const result = await usersCollection.insertOne(user)
             res.send(result);
         })
-        app.patch('/users/admin/:id', async (req, res) => {
+
+        app.get('/users/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            if (req.decoded.email !== email) {
+                res.send({ admin: false })
+            }
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            const result = { admin: user?.role === 'admin' };
+            res.send(result)
+        })
+
+        app.patch('/users/admin/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const updateDoc = {
@@ -60,6 +99,18 @@ async function run() {
                 },
             };
             const result = await usersCollection.updateOne(filter, updateDoc);
+            res.send(result)
+        })
+
+
+        app.get('/users/instructor/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            if (req.decoded.email !== email) {
+                res.send({ instructor: false })
+            }
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            const result = { instructor: user?.role === 'instructor' };
             res.send(result)
         })
         app.patch('/users/instructor/:id', async (req, res) => {
@@ -74,9 +125,16 @@ async function run() {
             res.send(result)
         })
 
-        // !!!! COACH api
+        // !!!! Instructors api
         app.get('/instructors', async (req, res) => {
             const result = await instructorsCollection.find().toArray();
+            res.send(result)
+        })
+
+        // classes api
+        app.post('/classes', async (req, res) => {
+            const classes = req.body;
+            const result = await classesCollection.insertOne(classes);
             res.send(result)
         })
 
