@@ -184,8 +184,6 @@ async function run() {
 
     // CLASSES API
     app.get("/classes", async (req, res) => {
-      console.log(req.query);
-      
       let query = {};
       if (req.query?.email) {
         query = { email: req.query.email }
@@ -207,15 +205,26 @@ async function run() {
     });
 
     // bookMarks api
-    app.get('/bookMarks', async (req, res) => {
-      console.log(req.query);
-      const result = await bookMarkCollection.find().toArray();
-      res.send(result)
-    })
+    app.get("/bookMarks", async (req, res) => {
+      let query = {};
+      if (req.query?.email) {
+        query = { email: req.query.email }
+      }
+      const result = await bookMarkCollection.find(query).toArray();
+      res.send(result);
+    });
 
     app.post('/bookMarks', async (req, res) => {
       const item = req.body;
       const result = await bookMarkCollection.insertOne(item);
+      res.send(result)
+    })
+    
+    // bookMark Delete
+    app.delete('bookmarks', async (req, res) => {
+      const id = id.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await bookMarkCollection.deleteOne(query);
       res.send(result)
     })
 
