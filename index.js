@@ -219,10 +219,10 @@ async function run() {
       const result = await bookMarkCollection.insertOne(item);
       res.send(result)
     })
-    
+
     // bookMark Delete
-    app.delete('bookmarks', async (req, res) => {
-      const id = id.params.id;
+    app.delete('/bookmarks/:id', async (req, res) => {
+      const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await bookMarkCollection.deleteOne(query);
       res.send(result)
