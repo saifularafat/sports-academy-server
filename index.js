@@ -103,7 +103,6 @@ async function run() {
       const user = req.body;
       const query = { email: user.email };
       const existingUser = await usersCollection.findOne(query);
-      console.log(existingUser);
       if (existingUser) {
         return res.send({ message: "milla geshe" });
       }
@@ -183,21 +182,15 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/classes", async (req, res) => {
-      const result = await classesCollection.find().toArray();
-      res.send(result);
-    });
-
     // CLASSES API
     app.get("/classes", async (req, res) => {
-      const result = await classesCollection.find().toArray();
-      res.send(result);
-    });
-
-    app.get("/classes/:email", async (req, res) => {
-      const email = req.params.email;
-      const query = { email: email };
-      const result = await classesCollection.findOne(query);
+      console.log(req.query);
+      
+      let query = {};
+      if (req.query?.email) {
+        query = { email: req.query.email }
+      }
+      const result = await classesCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -214,12 +207,18 @@ async function run() {
     });
 
     // bookMarks api
+    app.get('/bookMarks', async (req, res) => {
+      console.log(req.query);
+      const result = await bookMarkCollection.find().toArray();
+      res.send(result)
+    })
+
     app.post('/bookMarks', async (req, res) => {
       const item = req.body;
       const result = await bookMarkCollection.insertOne(item);
       res.send(result)
     })
-    
+
 
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your Sports Kings Academy successfully connected!");
