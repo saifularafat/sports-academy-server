@@ -256,6 +256,17 @@ async function run() {
       res.send({ insertResult });
     });
 
+    app.put("/paymentBookMaker/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          paid: "paid",
+        },
+      };
+      const result = await bookMarkCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
 
 
     await client.db("admin").command({ ping: 1 });
