@@ -94,7 +94,7 @@ async function run() {
     };
 
     // USERS api
-    app.get("/users", verifyJWT, async (req, res) => {
+    app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
@@ -156,7 +156,7 @@ async function run() {
       res.send(result);
     });
 
-                         // classes api
+    // classes api
     //???? STATUS
     // Approved
     app.patch("/classes/approved/:id", verifyJWT, async (req, res) => {
@@ -170,12 +170,7 @@ async function run() {
       const result = await classesCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-
-    app.get("/classes", async (req, res) => {
-      const result = await classesCollection.find().toArray();
-      res.send(result);
-    });
-
+    // Pending
     app.patch("/classes/pending/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -188,9 +183,21 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/classes", async (req, res) => {
+      const result = await classesCollection.find().toArray();
+      res.send(result);
+    });
+
     // CLASSES API
     app.get("/classes", async (req, res) => {
       const result = await classesCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/classes/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await classesCollection.findOne(query);
       res.send(result);
     });
 
@@ -207,7 +214,12 @@ async function run() {
     });
 
     // bookMarks api
-    // app.
+    app.post('/bookMarks', async (req, res) => {
+      const item = req.body;
+      const result = await bookMarkCollection.insertOne(item);
+      res.send(result)
+    })
+    
 
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your Sports Kings Academy successfully connected!");
