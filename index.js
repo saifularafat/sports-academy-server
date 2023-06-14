@@ -48,19 +48,13 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+    // await client.connect();
+
     const usersCollection = client.db("sportsAcademyDB").collection("users");
-    const instructorsCollection = client
-      .db("sportsAcademyDB")
-      .collection("coach");
-    const classesCollection = client
-      .db("sportsAcademyDB")
-      .collection("classes");
-    const bookMarkCollection = client
-      .db("sportsAcademyDB")
-      .collection("bookMarks");
-    const paymentCollection = client
-      .db("sportsAcademyDB")
-      .collection("payment");
+    const instructorsCollection = client.db("sportsAcademyDB").collection("coach");
+    const classesCollection = client.db("sportsAcademyDB").collection("classes");
+    const bookMarkCollection = client.db("sportsAcademyDB").collection("bookMarks");
+    const paymentCollection = client.db("sportsAcademyDB").collection("payment");
 
     // jwt api and token
     app.post("/jwt", (req, res) => {
@@ -100,6 +94,14 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      console.log(email);
+      const query = { email: email }
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+
     app.post("/users", async (req, res) => {
       const user = req.body;
       const query = { email: user.email };
@@ -111,7 +113,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/users/admin/:email", async (req, res) => {
+    app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       if (req.decoded?.email !== email) {
         return res.send({ admin: false });
@@ -144,7 +146,7 @@ async function run() {
       const result = { instructor: user?.role === "instructor" };
       res.send(result);
     });
-    app.patch("/users/instructor/:id", async (req, res) => {
+    app.patch("/users/instructor/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -218,7 +220,7 @@ async function run() {
       res.send(result);
     });
 
-    // bookMarks api
+    // bookMarks api verifyJWT
     app.get("/bookMarks", async (req, res) => {
       let query = {};
       if (req.query?.email) {
