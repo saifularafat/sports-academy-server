@@ -111,9 +111,9 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/users/admin/:email", verifyJWT, async (req, res) => {
+    app.get("/users/admin/:email", async (req, res) => {
       const email = req.params.email;
-      if (req.decoded.email !== email) {
+      if (req.decoded?.email !== email) {
         return res.send({ admin: false });
       }
       const query = { email: email };
@@ -157,9 +157,9 @@ async function run() {
     });
 
     // classes api
-    //???? STATUS
+    //? STATUS
     // Approved
-    app.patch("/classes/approved/:id", verifyJWT, async (req, res) => {
+    app.patch("/classes/approved/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -171,7 +171,7 @@ async function run() {
       res.send(result);
     });
     // Pending
-    app.patch("/classes/pending/:id", verifyJWT, async (req, res) => {
+    app.patch("/classes/pending/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -183,7 +183,7 @@ async function run() {
       res.send(result);
     });
     //FeedBack
-    app.post("/feedback/feedBack/:id", verifyJWT, async (req, res) => {
+    app.post("/feedback/feedBack/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -206,7 +206,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/classes", verifyJWT, async (req, res) => {
+    app.post("/classes", async (req, res) => {
       const classes = req.body;
       const result = await classesCollection.insertOne(classes);
       res.send(result);
@@ -250,7 +250,8 @@ async function run() {
       res.send(result)
     })
 
-    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+    // Payment
+    app.post("/create-payment-intent", async (req, res) => {
       const { price } = req.body;
       const amount = price * 100;
       const paymentIntent = await stripe.paymentIntents.create({
@@ -263,12 +264,14 @@ async function run() {
       });
     });
 
-    app.post("/payments", verifyJWT, async (req, res) => {
+    // Payment (admin1)
+    app.post("/payments", async (req, res) => {
       const payment = req.body;
       const insertResult = await paymentCollection.insertOne(payment);
       res.send({ insertResult });
     });
 
+    // Payment (admin1)
     app.put("/paymentBookMaker/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -280,6 +283,29 @@ async function run() {
       const result = await bookMarkCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
+    // Payment all
+    app.get('/payments', async (req, res) => {
+      const result = await paymentCollection.find().toArray();
+      res.send(result)
+    })
+
+    app.get('/payment/user', async (req, res) => {
+      let query = {};
+      if (req.query?.email) {
+        query = { email: req.query.email }
+      }
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result);
+    })
+    /* Descending  Get*/
+    app.get('/descendingPrice', async (req, res) => {
+      const result = await paymentCollection
+        .find()
+        .sort({ price: -1 })
+        .toArray()
+      res.send(result)
+    })
+
 
 
     await client.db("admin").command({ ping: 1 });
